@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, Key, Link, Film, Radio, Shield } from 'lucide-react';
+import { Play, Key, Link, Film, Radio, Shield, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -14,9 +14,10 @@ interface DrmConfig {
 
 interface PlayerControlsProps {
   onPlay: (url: string, drmConfig?: DrmConfig) => void;
+  onAddToPlaylist?: (name: string, url: string, type: 'mpd' | 'hls' | 'mp4', drmConfig?: DrmConfig) => void;
 }
 
-const PlayerControls: React.FC<PlayerControlsProps> = ({ onPlay }) => {
+const PlayerControls: React.FC<PlayerControlsProps> = ({ onPlay, onAddToPlaylist }) => {
   const [url, setUrl] = useState('');
   const [streamType, setStreamType] = useState<'mpd' | 'hls' | 'mp4'>('mpd');
   const [drmType, setDrmType] = useState<'none' | 'clearkey' | 'widevine'>('none');
@@ -24,18 +25,24 @@ const PlayerControls: React.FC<PlayerControlsProps> = ({ onPlay }) => {
   const [key, setKey] = useState('');
   const [licenseServer, setLicenseServer] = useState('');
 
+  const getDrmConfig = (): DrmConfig | undefined => {
+    if (drmType === 'clearkey' && keyId && key) {
+      return { type: 'clearkey', keyId, key };
+    } else if (drmType === 'widevine' && licenseServer) {
+      return { type: 'widevine', licenseServer };
+    }
+    return undefined;
+  };
+
   const handlePlay = () => {
     if (!url) return;
+    onPlay(url, getDrmConfig());
+  };
 
-    let drmConfig: DrmConfig | undefined;
-
-    if (drmType === 'clearkey' && keyId && key) {
-      drmConfig = { type: 'clearkey', keyId, key };
-    } else if (drmType === 'widevine' && licenseServer) {
-      drmConfig = { type: 'widevine', licenseServer };
-    }
-
-    onPlay(url, drmConfig);
+  const handleAddToPlaylist = () => {
+    if (!url || !onAddToPlaylist) return;
+    const name = url.split('/').pop()?.split('?')[0] || 'Stream';
+    onAddToPlaylist(name, url, streamType, getDrmConfig());
   };
 
   const sampleStreams = [
@@ -45,13 +52,23 @@ const PlayerControls: React.FC<PlayerControlsProps> = ({ onPlay }) => {
       type: 'mp4' as const,
     },
     {
-      name: 'Sintel (HLS)',
-      url: 'https://bitmovin-a.akamaihd.net/content/sintel/hls/playlist.m3u8',
-      type: 'hls' as const,
+      name: 'Elephant Dream (MP4)',
+      url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+      type: 'mp4' as const,
     },
     {
-      name: 'Tears of Steel (DASH)',
-      url: 'https://dash.akamaized.net/envivio/EnvisiveDash2/manifest.mpd',
+      name: 'Sintel Trailer (MP4)',
+      url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
+      type: 'mp4' as const,
+    },
+    {
+      name: 'Tears of Steel (MP4)',
+      url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
+      type: 'mp4' as const,
+    },
+    {
+      name: 'DASH Test Stream',
+      url: 'https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd',
       type: 'mpd' as const,
     },
   ];
@@ -177,15 +194,27 @@ const PlayerControls: React.FC<PlayerControlsProps> = ({ onPlay }) => {
           </div>
         )}
 
-        {/* Play Button */}
-        <Button
-          onClick={handlePlay}
-          disabled={!url}
-          className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity"
-        >
-          <Play className="w-5 h-5 mr-2" />
-          Play Stream
-        </Button>
+        {/* Play Buttons */}
+        <div className="flex gap-2">
+          <Button
+            onClick={handlePlay}
+            disabled={!url}
+            className="flex-1 h-12 text-lg font-semibold bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity"
+          >
+            <Play className="w-5 h-5 mr-2" />
+            Play
+          </Button>
+          {onAddToPlaylist && (
+            <Button
+              onClick={handleAddToPlaylist}
+              disabled={!url}
+              variant="outline"
+              className="h-12 px-4 border-primary/30 hover:bg-primary/10"
+            >
+              <Plus className="w-5 h-5" />
+            </Button>
+          )}
+        </div>
 
         {/* Sample Streams */}
         <div className="space-y-3">
