@@ -227,11 +227,16 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, drmConfig, onEnded }) =>
   };
 
   const toggleFullscreen = async () => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || !videoRef.current) return;
 
     if (!isFullscreen) {
       if (containerRef.current.requestFullscreen) {
         await containerRef.current.requestFullscreen();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } else if ((videoRef.current as any).webkitEnterFullscreen) {
+        // Fallback for iOS
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (videoRef.current as any).webkitEnterFullscreen();
       }
     } else {
       if (document.exitFullscreen) {
@@ -243,6 +248,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, drmConfig, onEnded }) =>
 
   const handleMouseMove = () => {
     setShowControls(true);
+    resetHideControlsTimer();
+  };
+
+  const resetHideControlsTimer = () => {
     if (hideControlsTimeout.current) {
       clearTimeout(hideControlsTimeout.current);
     }
@@ -253,32 +262,42 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, drmConfig, onEnded }) =>
     }, 3000);
   };
 
+  // UPDATED: Simple toggle for touch devices
+  const handleVideoTap = () => {
+    setShowControls((prev) => !prev);
+    if (!showControls) {
+      resetHideControlsTimer();
+    }
+  };
+
   const progress = duration ? (currentTime / duration) * 100 : 0;
   const bufferedProgress = duration ? (buffered / duration) * 100 : 0;
 
   return (
     <div
       ref={containerRef}
-      className="relative w-full aspect-video bg-player-bg rounded-xl overflow-hidden player-glow group"
+      className="relative w-full aspect-video bg-player-bg rounded-xl overflow-hidden player-glow group select-none"
       onMouseMove={handleMouseMove}
       onMouseLeave={() => isPlaying && setShowControls(false)}
     >
       <video
         ref={videoRef}
-        className="w-full h-full object-contain bg-black"
-        onClick={togglePlay}
+        className="w-full h-full object-contain bg-black cursor-pointer"
+        // UPDATED: Tap/Click toggles controls instead of direct play/pause
+        onClick={handleVideoTap}
+        playsInline // Important for iOS
       />
 
       {/* Loading Spinner */}
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 pointer-events-none z-20">
           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
       )}
 
       {/* Error Message */}
       {error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/80">
+        <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-20">
           <div className="text-center p-6">
             <p className="text-destructive text-lg font-medium mb-2">{error}</p>
             <button
@@ -291,34 +310,39 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, drmConfig, onEnded }) =>
         </div>
       )}
 
-      {/* Play/Pause Overlay */}
+      {/* Play/Pause Overlay - Big Button */}
       <div
-        className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
+        className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 z-10 pointer-events-none ${
           showControls && !isLoading && !error ? 'opacity-100' : 'opacity-0'
         }`}
       >
         <button
-          onClick={togglePlay}
-          className="w-20 h-20 rounded-full bg-primary/20 backdrop-blur-sm border border-primary/30 flex items-center justify-center hover:bg-primary/30 transition-all hover:scale-110"
+          onClick={(e) => {
+            // Need pointer-events-auto for this button since container is none
+            e.stopPropagation();
+            togglePlay();
+          }}
+          className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-primary/20 backdrop-blur-sm border border-primary/30 flex items-center justify-center hover:bg-primary/30 transition-all hover:scale-110 pointer-events-auto cursor-pointer"
         >
           {isPlaying ? (
-            <Pause className="w-10 h-10 text-primary-foreground" />
+            <Pause className="w-8 h-8 md:w-10 md:h-10 text-primary-foreground" />
           ) : (
-            <Play className="w-10 h-10 text-primary-foreground ml-1" />
+            <Play className="w-8 h-8 md:w-10 md:h-10 text-primary-foreground ml-1" />
           )}
         </button>
       </div>
 
-      {/* Controls */}
+      {/* Controls Bar */}
       <div
-        className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4 pt-12 transition-opacity duration-300 ${
+        className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 md:p-4 pt-12 transition-opacity duration-300 z-10 ${
           showControls && !isLoading && !error ? 'opacity-100' : 'opacity-0'
         }`}
+        onClick={(e) => e.stopPropagation()} // Prevent clicking controls from toggling visibility
       >
         {/* Progress Bar */}
         <div
           ref={progressRef}
-          className="relative h-1.5 bg-muted/30 rounded-full cursor-pointer group/progress mb-4"
+          className="relative h-1.5 bg-muted/30 rounded-full cursor-pointer group/progress mb-3 md:mb-4 touch-none"
           onClick={handleProgressClick}
         >
           {/* Buffered */}
@@ -333,29 +357,29 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, drmConfig, onEnded }) =>
           />
           {/* Thumb */}
           <div
-            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-primary-foreground rounded-full shadow-lg opacity-0 group-hover/progress:opacity-100 transition-opacity"
+            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-primary-foreground rounded-full shadow-lg opacity-100 md:opacity-0 md:group-hover/progress:opacity-100 transition-opacity"
             style={{ left: `calc(${progress}% - 8px)` }}
           />
         </div>
 
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {/* Play/Pause */}
+          <div className="flex items-center gap-2 md:gap-3">
+            {/* Play/Pause (Small) */}
             <button
               onClick={togglePlay}
-              className="p-2 rounded-full hover:bg-muted/30 transition-colors"
+              className="p-1.5 md:p-2 rounded-full hover:bg-muted/30 transition-colors"
             >
               {isPlaying ? (
-                <Pause className="w-5 h-5" />
+                <Pause className="w-5 h-5 md:w-6 md:h-6" />
               ) : (
-                <Play className="w-5 h-5 ml-0.5" />
+                <Play className="w-5 h-5 md:w-6 md:h-6 ml-0.5" />
               )}
             </button>
 
             {/* Skip Back */}
             <button
               onClick={() => skip(-10)}
-              className="p-2 rounded-full hover:bg-muted/30 transition-colors"
+              className="p-1.5 md:p-2 rounded-full hover:bg-muted/30 transition-colors hidden sm:block"
             >
               <SkipBack className="w-5 h-5" />
             </button>
@@ -363,16 +387,16 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, drmConfig, onEnded }) =>
             {/* Skip Forward */}
             <button
               onClick={() => skip(10)}
-              className="p-2 rounded-full hover:bg-muted/30 transition-colors"
+              className="p-1.5 md:p-2 rounded-full hover:bg-muted/30 transition-colors hidden sm:block"
             >
               <SkipForward className="w-5 h-5" />
             </button>
 
-            {/* Volume */}
-            <div className="flex items-center gap-2 group/volume">
+            {/* Volume - Hidden on very small screens to save space */}
+            <div className="flex items-center gap-2 group/volume hidden xs:flex">
               <button
                 onClick={toggleMute}
-                className="p-2 rounded-full hover:bg-muted/30 transition-colors"
+                className="p-1.5 md:p-2 rounded-full hover:bg-muted/30 transition-colors"
               >
                 {isMuted || volume === 0 ? (
                   <VolumeX className="w-5 h-5" />
@@ -387,26 +411,26 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, drmConfig, onEnded }) =>
                 step="0.1"
                 value={isMuted ? 0 : volume}
                 onChange={handleVolumeChange}
-                className="w-0 group-hover/volume:w-20 transition-all duration-300 accent-primary"
+                className="w-16 md:w-0 md:group-hover/volume:w-20 transition-all duration-300 accent-primary"
               />
             </div>
 
             {/* Time */}
-            <span className="text-sm text-muted-foreground tabular-nums">
+            <span className="text-xs md:text-sm text-muted-foreground tabular-nums ml-2">
               {formatTime(currentTime)} / {formatTime(duration)}
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 md:gap-2">
             {/* Settings */}
-            <button className="p-2 rounded-full hover:bg-muted/30 transition-colors">
+            <button className="p-1.5 md:p-2 rounded-full hover:bg-muted/30 transition-colors">
               <Settings className="w-5 h-5" />
             </button>
 
             {/* Fullscreen */}
             <button
               onClick={toggleFullscreen}
-              className="p-2 rounded-full hover:bg-muted/30 transition-colors"
+              className="p-1.5 md:p-2 rounded-full hover:bg-muted/30 transition-colors"
             >
               {isFullscreen ? (
                 <Minimize className="w-5 h-5" />
