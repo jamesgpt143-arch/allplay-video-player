@@ -73,11 +73,13 @@ const Playlist: React.FC<PlaylistProps> = ({
               }`}
               onClick={() => onPlay(index)}
             >
-              <GripVertical className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity cursor-grab" />
+              {/* Hide drag handle on mobile to save space, show on lg */}
+              <GripVertical className="hidden lg:block w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity cursor-grab" />
+              
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   {index === currentIndex && (
-                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse flex-shrink-0" />
                   )}
                   <span className={`text-sm truncate ${index === currentIndex ? 'font-medium text-primary' : ''}`}>
                     {item.name}
@@ -88,28 +90,30 @@ const Playlist: React.FC<PlaylistProps> = ({
                   {item.drmConfig && ` • ${item.drmConfig.type}`}
                 </span>
               </div>
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+
+              {/* UPDATED: Buttons are visible by default on mobile/tablet, fade on desktop */}
+              <div className="flex items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 hover:bg-primary/20 hover:text-primary"
+                  className="h-8 w-8 hover:bg-primary/20 hover:text-primary"
                   onClick={(e) => {
                     e.stopPropagation();
                     onPlay(index);
                   }}
                 >
-                  <Play className="w-3 h-3" />
+                  <Play className="w-4 h-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 hover:bg-destructive/20 hover:text-destructive"
+                  className="h-8 w-8 hover:bg-destructive/20 hover:text-destructive"
                   onClick={(e) => {
                     e.stopPropagation();
                     onRemove(index);
                   }}
                 >
-                  <Trash2 className="w-3 h-3" />
+                  <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
             </div>
