@@ -70,23 +70,24 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-4 py-3 md:py-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-gradient-to-br from-primary to-accent">
-              <Film className="w-6 h-6 text-primary-foreground" />
+              <Film className="w-5 h-5 md:w-6 md:h-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold gradient-text">StreamPlayer</h1>
-              <p className="text-xs text-muted-foreground">MPD • HLS • MP4 • DRM</p>
+              <h1 className="text-lg md:text-xl font-bold gradient-text">StreamPlayer</h1>
+              <p className="text-[10px] md:text-xs text-muted-foreground">MPD • HLS • MP4 • DRM</p>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
+      {/* Reduced padding for mobile */}
+      <main className="container mx-auto px-3 md:px-4 py-4 md:py-8">
+        <div className="grid lg:grid-cols-3 gap-6 md:gap-8">
           {/* Player Section */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 md:space-y-6">
             {isPlayerVisible && currentUrl ? (
               <div className="animate-fade-in">
                 <VideoPlayer 
@@ -94,7 +95,7 @@ const Index = () => {
                   drmConfig={currentDrmConfig} 
                   onEnded={handleVideoEnded}
                 />
-                <div className="mt-4 p-4 bg-card rounded-xl border border-border">
+                <div className="mt-3 md:mt-4 p-3 md:p-4 bg-card rounded-xl border border-border">
                   <div className="flex items-start gap-3">
                     <div className="p-2 rounded-lg bg-primary/10 text-primary mt-0.5">
                       <Play className="w-4 h-4" />
@@ -112,19 +113,19 @@ const Index = () => {
                 </div>
               </div>
             ) : (
-              <div className="aspect-video bg-card rounded-2xl border border-border flex flex-col items-center justify-center animate-fade-in">
-                <div className="p-6 rounded-full bg-secondary/50 mb-6 animate-pulse-glow">
-                  <Film className="w-16 h-16 text-muted-foreground" />
+              <div className="aspect-video bg-card rounded-2xl border border-border flex flex-col items-center justify-center animate-fade-in p-4 text-center">
+                <div className="p-4 md:p-6 rounded-full bg-secondary/50 mb-4 md:mb-6 animate-pulse-glow">
+                  <Film className="w-12 h-12 md:w-16 md:h-16 text-muted-foreground" />
                 </div>
-                <h2 className="text-2xl font-bold gradient-text mb-2">Ready to Stream</h2>
-                <p className="text-muted-foreground text-center max-w-md px-4">
+                <h2 className="text-xl md:text-2xl font-bold gradient-text mb-2">Ready to Stream</h2>
+                <p className="text-sm md:text-base text-muted-foreground max-w-md">
                   Enter a stream URL to start playing. Supports DASH/MPD with ClearKey & Widevine DRM, HLS, and MP4 formats.
                 </p>
               </div>
             )}
 
-            {/* Features */}
-            <div className="grid sm:grid-cols-3 gap-4">
+            {/* Features - Mobile friendly grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
               {[
                 { title: 'DASH/MPD', desc: 'Adaptive streaming', icon: '📡' },
                 { title: 'DRM Support', desc: 'ClearKey & Widevine', icon: '🔐' },
@@ -132,18 +133,20 @@ const Index = () => {
               ].map((feature) => (
                 <div
                   key={feature.title}
-                  className="p-4 bg-card rounded-xl border border-border hover:border-primary/50 transition-colors"
+                  className="flex items-center sm:block p-3 md:p-4 bg-card rounded-xl border border-border hover:border-primary/50 transition-colors"
                 >
-                  <span className="text-2xl mb-2 block">{feature.icon}</span>
-                  <h3 className="font-semibold text-sm">{feature.title}</h3>
-                  <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                  <span className="text-xl sm:text-2xl mr-3 sm:mr-0 sm:mb-2 block">{feature.icon}</span>
+                  <div>
+                    <h3 className="font-semibold text-sm">{feature.title}</h3>
+                    <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Controls Section */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:col-span-1 space-y-4 md:space-y-6">
             <PlayerControls onPlay={handlePlay} onAddToPlaylist={handleAddToPlaylist} />
             <Playlist
               items={playlist}
@@ -157,8 +160,8 @@ const Index = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border mt-16 py-6">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+      <footer className="border-t border-border mt-8 md:mt-16 py-6">
+        <div className="container mx-auto px-4 text-center text-xs md:text-sm text-muted-foreground">
           <p>Powered by Shaka Player • Supports DASH, HLS, MP4 with DRM</p>
         </div>
       </footer>
