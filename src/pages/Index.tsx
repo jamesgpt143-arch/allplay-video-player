@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Play, Film } from 'lucide-react';
 import VideoPlayer from '@/components/VideoPlayer';
 import PlayerControls from '@/components/PlayerControls';
+import Playlist, { PlaylistItem } from '@/components/Playlist';
 
 interface DrmConfig {
   type: 'clearkey' | 'widevine';
@@ -14,12 +15,56 @@ const Index = () => {
   const [currentUrl, setCurrentUrl] = useState<string>('');
   const [currentDrmConfig, setCurrentDrmConfig] = useState<DrmConfig | undefined>();
   const [isPlayerVisible, setIsPlayerVisible] = useState(false);
+  const [playlist, setPlaylist] = useState<PlaylistItem[]>([]);
+  const [currentPlaylistIndex, setCurrentPlaylistIndex] = useState(-1);
 
   const handlePlay = (url: string, drmConfig?: DrmConfig) => {
     setCurrentUrl(url);
     setCurrentDrmConfig(drmConfig);
     setIsPlayerVisible(true);
+    setCurrentPlaylistIndex(-1);
   };
+
+  const handleAddToPlaylist = (name: string, url: string, type: 'mpd' | 'hls' | 'mp4', drmConfig?: DrmConfig) => {
+    const newItem: PlaylistItem = {
+      id: Date.now().toString(),
+      name,
+      url,
+      type,
+      drmConfig,
+    };
+    setPlaylist((prev) => [...prev, newItem]);
+  };
+
+  const handlePlayFromPlaylist = useCallback((index: number) => {
+    const item = playlist[index];
+    if (item) {
+      setCurrentUrl(item.url);
+      setCurrentDrmConfig(item.drmConfig);
+      setIsPlayerVisible(true);
+      setCurrentPlaylistIndex(index);
+    }
+  }, [playlist]);
+
+  const handleRemoveFromPlaylist = (index: number) => {
+    setPlaylist((prev) => prev.filter((_, i) => i !== index));
+    if (currentPlaylistIndex === index) {
+      setCurrentPlaylistIndex(-1);
+    } else if (currentPlaylistIndex > index) {
+      setCurrentPlaylistIndex((prev) => prev - 1);
+    }
+  };
+
+  const handleClearPlaylist = () => {
+    setPlaylist([]);
+    setCurrentPlaylistIndex(-1);
+  };
+
+  const handleVideoEnded = useCallback(() => {
+    if (currentPlaylistIndex >= 0 && currentPlaylistIndex < playlist.length - 1) {
+      handlePlayFromPlaylist(currentPlaylistIndex + 1);
+    }
+  }, [currentPlaylistIndex, playlist.length, handlePlayFromPlaylist]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -44,7 +89,11 @@ const Index = () => {
           <div className="lg:col-span-2 space-y-6">
             {isPlayerVisible && currentUrl ? (
               <div className="animate-fade-in">
-                <VideoPlayer url={currentUrl} drmConfig={currentDrmConfig} />
+                <VideoPlayer 
+                  url={currentUrl} 
+                  drmConfig={currentDrmConfig} 
+                  onEnded={handleVideoEnded}
+                />
                 <div className="mt-4 p-4 bg-card rounded-xl border border-border">
                   <div className="flex items-start gap-3">
                     <div className="p-2 rounded-lg bg-primary/10 text-primary mt-0.5">
@@ -94,8 +143,15 @@ const Index = () => {
           </div>
 
           {/* Controls Section */}
-          <div className="lg:col-span-1">
-            <PlayerControls onPlay={handlePlay} />
+          <div className="lg:col-span-1 space-y-6">
+            <PlayerControls onPlay={handlePlay} onAddToPlaylist={handleAddToPlaylist} />
+            <Playlist
+              items={playlist}
+              currentIndex={currentPlaylistIndex}
+              onPlay={handlePlayFromPlaylist}
+              onRemove={handleRemoveFromPlaylist}
+              onClear={handleClearPlaylist}
+            />
           </div>
         </div>
       </main>

@@ -19,9 +19,10 @@ interface VideoPlayerProps {
     key?: string;
     licenseServer?: string;
   };
+  onEnded?: () => void;
 }
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, drmConfig }) => {
+const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, drmConfig, onEnded }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -161,6 +162,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, drmConfig }) => {
 
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
+    const handleEnded = () => {
+      setIsPlaying(false);
+      onEnded?.();
+    };
     const handleVolumeChange = () => {
       setVolume(video.volume);
       setIsMuted(video.muted);
@@ -170,6 +175,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, drmConfig }) => {
     video.addEventListener('loadedmetadata', handleLoadedMetadata);
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
+    video.addEventListener('ended', handleEnded);
     video.addEventListener('volumechange', handleVolumeChange);
 
     return () => {
@@ -177,9 +183,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, drmConfig }) => {
       video.removeEventListener('loadedmetadata', handleLoadedMetadata);
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
+      video.removeEventListener('ended', handleEnded);
       video.removeEventListener('volumechange', handleVolumeChange);
     };
-  }, []);
+  }, [onEnded]);
 
   const togglePlay = () => {
     if (videoRef.current) {
