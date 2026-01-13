@@ -3,6 +3,7 @@ import { Play, Film } from 'lucide-react';
 import VideoPlayer from '@/components/VideoPlayer';
 import PlayerControls from '@/components/PlayerControls';
 import Playlist, { PlaylistItem } from '@/components/Playlist';
+import { M3UItem } from '@/lib/m3u-parser';
 
 interface DrmConfig {
   type: 'clearkey' | 'widevine';
@@ -34,6 +35,16 @@ const Index = () => {
       drmConfig,
     };
     setPlaylist((prev) => [...prev, newItem]);
+  };
+
+  const handleM3ULoaded = (items: M3UItem[]) => {
+    const newItems: PlaylistItem[] = items.map((item, i) => ({
+      id: `${Date.now()}-${i}`,
+      name: item.name,
+      url: item.url,
+      type: item.url.includes('.m3u8') ? 'hls' : item.url.includes('.mpd') ? 'mpd' : 'mp4',
+    }));
+    setPlaylist((prev) => [...prev, ...newItems]);
   };
 
   const handlePlayFromPlaylist = useCallback((index: number) => {
@@ -147,7 +158,7 @@ const Index = () => {
 
           {/* Controls Section */}
           <div className="lg:col-span-1 space-y-4 md:space-y-6">
-            <PlayerControls onPlay={handlePlay} onAddToPlaylist={handleAddToPlaylist} />
+            <PlayerControls onPlay={handlePlay} onAddToPlaylist={handleAddToPlaylist} onM3ULoaded={handleM3ULoaded} />
             <Playlist
               items={playlist}
               currentIndex={currentPlaylistIndex}
