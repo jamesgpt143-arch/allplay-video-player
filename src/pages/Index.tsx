@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Play, Film } from 'lucide-react';
+import { Film } from 'lucide-react'; // Removed 'Play' since it's no longer used
 import VideoPlayer from '@/components/VideoPlayer';
 import PlayerControls from '@/components/PlayerControls';
 import Playlist, { PlaylistItem } from '@/components/Playlist';
@@ -106,22 +106,7 @@ const Index = () => {
                   drmConfig={currentDrmConfig} 
                   onEnded={handleVideoEnded}
                 />
-                <div className="mt-3 md:mt-4 p-3 md:p-4 bg-card rounded-xl border border-border">
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10 text-primary mt-0.5">
-                      <Play className="w-4 h-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-sm">Now Playing</h3>
-                      <p className="text-xs text-muted-foreground truncate">{currentUrl}</p>
-                      {currentDrmConfig && (
-                        <span className="inline-block mt-2 px-2 py-1 bg-accent/10 text-accent rounded text-xs font-medium uppercase">
-                          {currentDrmConfig.type} Protected
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                {/* REMOVED: Now Playing info box to prevent layout shift */}
               </div>
             ) : (
               <div className="aspect-video bg-card rounded-2xl border border-border flex flex-col items-center justify-center animate-fade-in p-4 text-center">
