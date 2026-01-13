@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { Play, Key, Link, Film, Radio, Shield, Plus } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Play, Key, Link, Film, Radio, Shield, Plus, Upload, FileText } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { parseM3U, M3UItem } from '@/lib/m3u-parser';
+import { toast } from 'sonner';
 
 interface DrmConfig {
   type: 'clearkey' | 'widevine';
@@ -15,15 +17,18 @@ interface DrmConfig {
 interface PlayerControlsProps {
   onPlay: (url: string, drmConfig?: DrmConfig) => void;
   onAddToPlaylist?: (name: string, url: string, type: 'mpd' | 'hls' | 'mp4', drmConfig?: DrmConfig) => void;
+  onM3ULoaded?: (items: M3UItem[]) => void;
 }
 
-const PlayerControls: React.FC<PlayerControlsProps> = ({ onPlay, onAddToPlaylist }) => {
+const PlayerControls: React.FC<PlayerControlsProps> = ({ onPlay, onAddToPlaylist, onM3ULoaded }) => {
   const [url, setUrl] = useState('');
+  const [m3uUrl, setM3uUrl] = useState('');
   const [streamType, setStreamType] = useState<'mpd' | 'hls' | 'mp4'>('mpd');
   const [drmType, setDrmType] = useState<'none' | 'clearkey' | 'widevine'>('none');
   const [keyId, setKeyId] = useState('');
   const [key, setKey] = useState('');
   const [licenseServer, setLicenseServer] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const getDrmConfig = (): DrmConfig | undefined => {
     if (drmType === 'clearkey' && keyId && key) {
@@ -45,33 +50,56 @@ const PlayerControls: React.FC<PlayerControlsProps> = ({ onPlay, onAddToPlaylist
     onAddToPlaylist(name, url, streamType, getDrmConfig());
   };
 
-  const sampleStreams = [
-    {
-      name: 'Big Buck Bunny (MP4)',
-      url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      type: 'mp4' as const,
-    },
-    {
-      name: 'Elephant Dream (MP4)',
-      url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-      type: 'mp4' as const,
-    },
-    {
-      name: 'Sintel Trailer (MP4)',
-      url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
-      type: 'mp4' as const,
-    },
-    {
-      name: 'Tears of Steel (MP4)',
-      url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
-      type: 'mp4' as const,
-    },
-    {
-      name: 'DASH Test Stream',
-      url: 'https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd',
-      type: 'mpd' as const,
-    },
-  ];
+  const handleLoadM3UUrl = async () => {
+    if (!m3uUrl.trim()) {
+      toast.error('Please enter an M3U URL');
+      return;
+    }
+
+    try {
+      const response = await fetch(m3uUrl);
+      if (!response.ok) throw new Error('Failed to fetch M3U');
+      
+      const content = await response.text();
+      const items = parseM3U(content);
+      
+      if (items.length === 0) {
+        toast.error('No valid streams found in M3U');
+        return;
+      }
+
+      onM3ULoaded?.(items);
+      toast.success(`Loaded ${items.length} channels`);
+      setM3uUrl('');
+    } catch (err) {
+      toast.error('Failed to load M3U playlist. Check CORS or URL.');
+      console.error(err);
+    }
+  };
+
+  const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      const items = parseM3U(content);
+      
+      if (items.length === 0) {
+        toast.error('No valid streams found in M3U file');
+        return;
+      }
+
+      onM3ULoaded?.(items);
+      toast.success(`Loaded ${items.length} channels from file`);
+    };
+    reader.readAsText(file);
+    
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   return (
     <div className="bg-card rounded-2xl p-6 border border-border animate-slide-up">
@@ -81,7 +109,7 @@ const PlayerControls: React.FC<PlayerControlsProps> = ({ onPlay, onAddToPlaylist
           <TabsList className="grid grid-cols-3 bg-secondary">
             <TabsTrigger value="mpd" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Film className="w-4 h-4" />
-              MPD/DASH
+              MPD
             </TabsTrigger>
             <TabsTrigger value="hls" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Radio className="w-4 h-4" />
@@ -92,22 +120,6 @@ const PlayerControls: React.FC<PlayerControlsProps> = ({ onPlay, onAddToPlaylist
               MP4
             </TabsTrigger>
           </TabsList>
-
-          <TabsContent value="mpd" className="mt-4">
-            <div className="text-sm text-muted-foreground mb-3">
-              Enter DASH/MPD stream URL with optional DRM protection
-            </div>
-          </TabsContent>
-          <TabsContent value="hls" className="mt-4">
-            <div className="text-sm text-muted-foreground mb-3">
-              Enter HLS stream URL (.m3u8)
-            </div>
-          </TabsContent>
-          <TabsContent value="mp4" className="mt-4">
-            <div className="text-sm text-muted-foreground mb-3">
-              Enter direct MP4 video URL
-            </div>
-          </TabsContent>
         </Tabs>
 
         {/* URL Input */}
@@ -216,30 +228,41 @@ const PlayerControls: React.FC<PlayerControlsProps> = ({ onPlay, onAddToPlaylist
           )}
         </div>
 
-        {/* Sample Streams */}
-        <div className="space-y-3">
-          <Label className="text-muted-foreground text-sm">Sample Streams</Label>
-          <div className="grid gap-2">
-            {sampleStreams.map((stream) => (
-              <button
-                key={stream.name}
-                onClick={() => {
-                  setUrl(stream.url);
-                  setStreamType(stream.type);
-                  setDrmType('none');
-                }}
-                className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg hover:bg-secondary transition-colors text-left group"
-              >
-                <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                  <Film className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-sm font-medium">{stream.name}</div>
-                  <div className="text-xs text-muted-foreground uppercase">{stream.type}</div>
-                </div>
-              </button>
-            ))}
+        {/* M3U Playlist Import */}
+        <div className="space-y-3 pt-4 border-t border-border">
+          <Label className="flex items-center gap-2">
+            <FileText className="w-4 h-4 text-primary" />
+            M3U Playlist
+          </Label>
+          
+          <div className="flex gap-2">
+            <Input
+              value={m3uUrl}
+              onChange={(e) => setM3uUrl(e.target.value)}
+              placeholder="Enter M3U playlist URL..."
+              className="flex-1 bg-secondary border-border"
+            />
+            <Button onClick={handleLoadM3UUrl} variant="secondary">
+              <Link className="w-4 h-4" />
+            </Button>
           </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".m3u,.m3u8"
+            onChange={handleFileImport}
+            className="hidden"
+            id="m3u-file-input"
+          />
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Import M3U File
+          </Button>
         </div>
       </div>
     </div>
