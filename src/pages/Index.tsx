@@ -94,55 +94,56 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Reduced padding for mobile */}
+      {/* Main Content */}
       <main className="container mx-auto px-3 md:px-4 py-4 md:py-8">
         <div className="grid lg:grid-cols-3 gap-6 md:gap-8">
-          {/* Player Section */}
-          <div className="lg:col-span-2 space-y-4 md:space-y-6">
-            {isPlayerVisible && currentUrl ? (
-              <div className="animate-fade-in">
-                <VideoPlayer 
-                  url={currentUrl} 
-                  drmConfig={currentDrmConfig} 
-                  onEnded={handleVideoEnded}
-                />
-                {/* REMOVED: Now Playing info box to prevent layout shift */}
-              </div>
-            ) : (
-              <div className="aspect-video bg-card rounded-2xl border border-border flex flex-col items-center justify-center animate-fade-in p-4 text-center">
-                <div className="p-4 md:p-6 rounded-full bg-secondary/50 mb-4 md:mb-6 animate-pulse-glow">
-                  <Film className="w-12 h-12 md:w-16 md:h-16 text-muted-foreground" />
+          {/* Player Section - Sticky on desktop, fixed aspect ratio */}
+          <div className="lg:col-span-2">
+            <div className="lg:sticky lg:top-20 space-y-4 md:space-y-6">
+              {isPlayerVisible && currentUrl ? (
+                <div className="animate-fade-in">
+                  <VideoPlayer 
+                    url={currentUrl} 
+                    drmConfig={currentDrmConfig} 
+                    onEnded={handleVideoEnded}
+                  />
                 </div>
-                <h2 className="text-xl md:text-2xl font-bold gradient-text mb-2">Ready to Stream</h2>
-                <p className="text-sm md:text-base text-muted-foreground max-w-md">
-                  Enter a stream URL to start playing. Supports DASH/MPD with ClearKey & Widevine DRM, HLS, and MP4 formats.
-                </p>
-              </div>
-            )}
-
-            {/* Features - Mobile friendly grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
-              {[
-                { title: 'DASH/MPD', desc: 'Adaptive streaming', icon: '📡' },
-                { title: 'DRM Support', desc: 'ClearKey & Widevine', icon: '🔐' },
-                { title: 'HLS & MP4', desc: 'Multiple formats', icon: '🎬' },
-              ].map((feature) => (
-                <div
-                  key={feature.title}
-                  className="flex items-center sm:block p-3 md:p-4 bg-card rounded-xl border border-border hover:border-primary/50 transition-colors"
-                >
-                  <span className="text-xl sm:text-2xl mr-3 sm:mr-0 sm:mb-2 block">{feature.icon}</span>
-                  <div>
-                    <h3 className="font-semibold text-sm">{feature.title}</h3>
-                    <p className="text-xs text-muted-foreground">{feature.desc}</p>
+              ) : (
+                <div className="aspect-video bg-card rounded-2xl border border-border flex flex-col items-center justify-center animate-fade-in p-4 text-center">
+                  <div className="p-4 md:p-6 rounded-full bg-secondary/50 mb-4 md:mb-6 animate-pulse-glow">
+                    <Film className="w-12 h-12 md:w-16 md:h-16 text-muted-foreground" />
                   </div>
+                  <h2 className="text-xl md:text-2xl font-bold gradient-text mb-2">Ready to Stream</h2>
+                  <p className="text-sm md:text-base text-muted-foreground max-w-md">
+                    Enter a stream URL to start playing. Supports DASH/MPD with ClearKey & Widevine DRM, HLS, and MP4 formats.
+                  </p>
                 </div>
-              ))}
+              )}
+
+              {/* Features - Mobile friendly grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+                {[
+                  { title: 'DASH/MPD', desc: 'Adaptive streaming', icon: '📡' },
+                  { title: 'DRM Support', desc: 'ClearKey & Widevine', icon: '🔐' },
+                  { title: 'HLS & MP4', desc: 'Multiple formats', icon: '🎬' },
+                ].map((feature) => (
+                  <div
+                    key={feature.title}
+                    className="flex items-center sm:block p-3 md:p-4 bg-card rounded-xl border border-border hover:border-primary/50 transition-colors"
+                  >
+                    <span className="text-xl sm:text-2xl mr-3 sm:mr-0 sm:mb-2 block">{feature.icon}</span>
+                    <div>
+                      <h3 className="font-semibold text-sm">{feature.title}</h3>
+                      <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Controls Section */}
-          <div className="lg:col-span-1 space-y-4 md:space-y-6">
+          {/* Controls Section - Scrollable on mobile */}
+          <div className="lg:col-span-1 space-y-4 md:space-y-6 max-h-[70vh] lg:max-h-none overflow-y-auto lg:overflow-visible">
             <PlayerControls onPlay={handlePlay} onAddToPlaylist={handleAddToPlaylist} onM3ULoaded={handleM3ULoaded} />
             <Playlist
               items={playlist}
