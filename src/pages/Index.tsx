@@ -1,9 +1,10 @@
 import { useState, useCallback } from 'react';
-import { Film } from 'lucide-react'; // Removed 'Play' since it's no longer used
+import { Film } from 'lucide-react';
 import VideoPlayer from '@/components/VideoPlayer';
 import PlayerControls from '@/components/PlayerControls';
 import Playlist, { PlaylistItem } from '@/components/Playlist';
 import { M3UItem } from '@/lib/m3u-parser';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface DrmConfig {
   type: 'clearkey' | 'widevine';
@@ -142,16 +143,20 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Controls Section - Scrollable on mobile */}
-          <div className="lg:col-span-1 space-y-4 md:space-y-6 max-h-[70vh] lg:max-h-none overflow-y-auto lg:overflow-visible">
-            <PlayerControls onPlay={handlePlay} onAddToPlaylist={handleAddToPlaylist} onM3ULoaded={handleM3ULoaded} />
-            <Playlist
-              items={playlist}
-              currentIndex={currentPlaylistIndex}
-              onPlay={handlePlayFromPlaylist}
-              onRemove={handleRemoveFromPlaylist}
-              onClear={handleClearPlaylist}
-            />
+          {/* Controls Section - Separate scroll area */}
+          <div className="lg:col-span-1">
+            <ScrollArea className="h-[60vh] lg:h-[calc(100vh-8rem)] pr-2">
+              <div className="space-y-4 md:space-y-6">
+                <PlayerControls onPlay={handlePlay} onAddToPlaylist={handleAddToPlaylist} onM3ULoaded={handleM3ULoaded} />
+                <Playlist
+                  items={playlist}
+                  currentIndex={currentPlaylistIndex}
+                  onPlay={handlePlayFromPlaylist}
+                  onRemove={handleRemoveFromPlaylist}
+                  onClear={handleClearPlaylist}
+                />
+              </div>
+            </ScrollArea>
           </div>
         </div>
       </main>
