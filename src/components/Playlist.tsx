@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { Play, Trash2, GripVertical, ListMusic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -24,16 +24,16 @@ interface PlaylistProps {
   onClear: () => void;
 }
 
-const Playlist: React.FC<PlaylistProps> = ({
+const Playlist = forwardRef<HTMLDivElement, PlaylistProps>(({
   items,
   currentIndex,
   onPlay,
   onRemove,
   onClear,
-}) => {
+}, ref) => {
   if (items.length === 0) {
     return (
-      <div className="bg-card rounded-xl p-4 border border-border">
+      <div ref={ref} className="bg-card rounded-xl p-4 border border-border">
         <div className="flex items-center gap-2 mb-3">
           <ListMusic className="w-4 h-4 text-primary" />
           <span className="text-sm font-medium">Playlist</span>
@@ -46,7 +46,7 @@ const Playlist: React.FC<PlaylistProps> = ({
   }
 
   return (
-    <div className="bg-card rounded-xl border border-border overflow-hidden">
+    <div ref={ref} className="bg-card rounded-xl border border-border overflow-hidden">
       <div className="flex items-center justify-between p-3 border-b border-border bg-secondary/30">
         <div className="flex items-center gap-2">
           <ListMusic className="w-4 h-4 text-primary" />
@@ -122,6 +122,8 @@ const Playlist: React.FC<PlaylistProps> = ({
       </ScrollArea>
     </div>
   );
-};
+});
+
+Playlist.displayName = 'Playlist';
 
 export default Playlist;
